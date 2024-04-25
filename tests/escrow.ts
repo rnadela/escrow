@@ -28,11 +28,17 @@ describe('escrow', () => {
 
   // 38MWzLvaxmmyePpSHpD2TzxfEyYQNcfsJHjLF9yda1JT
   const escrow_account = anchor.web3.Keypair.fromSecretKey(
+    // Uint8Array.from([
+    //   37, 171, 117, 64, 240, 87, 193, 71, 196, 107, 14, 217, 246, 48, 23, 147,
+    //   134, 188, 153, 39, 100, 207, 250, 3, 5, 200, 102, 249, 106, 225, 71, 8,
+    //   31, 153, 163, 98, 4, 44, 178, 175, 117, 179, 105, 235, 168, 95, 237, 86,
+    //   195, 25, 90, 88, 163, 35, 225, 94, 234, 221, 44, 91, 75, 61, 216, 92,
+    // ]),
     Uint8Array.from([
-      37, 171, 117, 64, 240, 87, 193, 71, 196, 107, 14, 217, 246, 48, 23, 147,
-      134, 188, 153, 39, 100, 207, 250, 3, 5, 200, 102, 249, 106, 225, 71, 8,
-      31, 153, 163, 98, 4, 44, 178, 175, 117, 179, 105, 235, 168, 95, 237, 86,
-      195, 25, 90, 88, 163, 35, 225, 94, 234, 221, 44, 91, 75, 61, 216, 92,
+      96, 31, 211, 116, 9, 23, 206, 64, 230, 25, 59, 5, 36, 219, 105, 177, 23,
+      204, 94, 202, 191, 139, 215, 75, 177, 107, 215, 126, 107, 134, 110, 158,
+      184, 189, 55, 248, 196, 179, 212, 119, 64, 201, 183, 1, 158, 210, 42, 106,
+      20, 206, 45, 240, 58, 173, 166, 51, 209, 105, 212, 91, 149, 179, 148, 201,
     ]),
   );
 
@@ -76,6 +82,10 @@ describe('escrow', () => {
       135,
     ]),
   );
+
+  // it('generate escrow account keypair', async () => {
+  //   console.log('keypair =', anchor.web3.Keypair.generate().secretKey);
+  // });
 
   // it('logging', async () => {
   //   console.log(
@@ -159,7 +169,7 @@ describe('escrow', () => {
   // });
 
   // it('mint tokens', async () => {
-  //   const amount = 1;
+  //   const amount = 5;
   //   //
   //   const ata_user1_t1_pk = await getAssociatedTokenAddress(
   //     token1_mint.publicKey,
@@ -195,6 +205,7 @@ describe('escrow', () => {
   // });
 
   // it('create new escrow', async () => {
+  //   const amount = 5;
   //   try {
   //     const user1_token1 = await getAssociatedTokenAddress(
   //       token1_mint.publicKey,
@@ -205,7 +216,7 @@ describe('escrow', () => {
   //       user1.publicKey,
   //     );
   //     const tx = await program.methods
-  //       .startEscrow(new anchor.BN(1), new anchor.BN(1))
+  //       .startEscrow(new anchor.BN(amount), new anchor.BN(amount))
   //       .accounts({
   //         payer: user1.publicKey,
   //         escrowAccount: escrow_account.publicKey,
@@ -268,58 +279,58 @@ describe('escrow', () => {
   //   }
   // });
 
-  // it('exchange', async () => {
-  //   try {
-  //     const [vault_owner, bump] = PublicKey.findProgramAddressSync(
-  //       [Uint8Array.from(get_seeds('vault_owner'))],
-  //       program.programId,
-  //     );
-  //     const user1_token1 = await getAssociatedTokenAddress(
-  //       token1_mint.publicKey,
-  //       user1.publicKey,
-  //     );
-  //     const user1_token2 = await getAssociatedTokenAddress(
-  //       token2_mint.publicKey,
-  //       user1.publicKey,
-  //     );
-  //     const user2_token1 = await getAssociatedTokenAddress(
-  //       token1_mint.publicKey,
-  //       user2.publicKey,
-  //     );
-  //     const user2_token2 = await getAssociatedTokenAddress(
-  //       token2_mint.publicKey,
-  //       user2.publicKey,
-  //     );
-  //     console.log('user1_token1 =', user1_token1);
-  //     console.log('user1_token2 =', user1_token2);
-  //     console.log('user2_token1 =', user2_token1);
-  //     console.log('user2_token2 =', user2_token2);
-  //     const tx = await program.methods
-  //       .exchange(bump)
-  //       .accounts({
-  //         payer: user2.publicKey,
-  //         escrowAccount: escrow_account.publicKey,
-  //         user1Token1: user1_token1,
-  //         user1Token2: user1_token2,
-  //         user2Token1: user2_token1,
-  //         user2Token2: user2_token2,
-  //         token1Vault: PublicKey.findProgramAddressSync(
-  //           [
-  //             Uint8Array.from(get_seeds('token1_vault')),
-  //             user1.publicKey.toBytes(),
-  //             token1_mint.publicKey.toBytes(),
-  //           ],
-  //           program.programId,
-  //         )[0],
-  //         vaultOwner: vault_owner,
-  //       })
-  //       .signers([user2])
-  //       .rpc();
-  //     console.log('Your transaction signature', tx);
-  //   } catch (e) {
-  //     console.log(e);
-  //   }
-  // });
+  it('exchange', async () => {
+    try {
+      const [vault_owner, bump] = PublicKey.findProgramAddressSync(
+        [Uint8Array.from(get_seeds('vault_owner'))],
+        program.programId,
+      );
+      const user1_token1_account = await getAssociatedTokenAddress(
+        token1_mint.publicKey,
+        user1.publicKey,
+      );
+      const user1_token2_account = await getAssociatedTokenAddress(
+        token2_mint.publicKey,
+        user1.publicKey,
+      );
+      const user2_token1_account = await getAssociatedTokenAddress(
+        token1_mint.publicKey,
+        user2.publicKey,
+      );
+      const user2_token2_account = await getAssociatedTokenAddress(
+        token2_mint.publicKey,
+        user2.publicKey,
+      );
+      console.log('user1_token1_account =', user1_token1_account);
+      console.log('user1_token2_account =', user1_token2_account);
+      console.log('user2_token1_account =', user2_token1_account);
+      console.log('user2_token2_account =', user2_token2_account);
+      const tx = await program.methods
+        .exchange(bump)
+        .accounts({
+          payer: user2.publicKey,
+          escrowAccount: escrow_account.publicKey,
+          user1Token1: user1_token1_account,
+          user1Token2: user1_token2_account,
+          user2Token1: user2_token1_account,
+          user2Token2: user2_token2_account,
+          token1Vault: PublicKey.findProgramAddressSync(
+            [
+              Uint8Array.from(get_seeds('token1_vault')),
+              user1.publicKey.toBytes(),
+              token1_mint.publicKey.toBytes(),
+            ],
+            program.programId,
+          )[0],
+          vaultOwner: vault_owner,
+        })
+        .signers([user2])
+        .rpc();
+      console.log('Your transaction signature', tx);
+    } catch (e) {
+      console.log(e);
+    }
+  });
 });
 
 function get_seeds(seed_str: any) {
