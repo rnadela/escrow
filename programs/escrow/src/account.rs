@@ -1,53 +1,54 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{CloseAccount, Mint, Token, TokenAccount, Transfer};
+use anchor_lang::solana_program::{program::invoke_signed, system_instruction};
 
 #[account]
 pub struct EscrowInfo {
-    // why not user2_kp? because user1 is the initializer, only they can cancel the escrow, this would be used in constraints later
-    pub user1_kp: Pubkey,
-    // to check if user sending correct token account (in constrains)
-    pub token1_mint: Pubkey,
-    // to know what token to expect from user2
-    pub token2_mint: Pubkey,
-    // the account that would receive tokens when swap is cancelled
-    pub user1_token1: Pubkey,
-    // where to do cpi transfer when user2 completes swap
-    pub user1_token2: Pubkey,
-    // why nothing for user2?
-    // no need of their info
-    pub token1_amount: u64,
-    // amount of token2 asked by user1 to complete the escrow
-    pub token2_amount: u64,
+    // Seller is the initializer, only they can cancel the escrow, this would be used in constraints later
+    pub seller_kp: Pubkey,
+    // To receive transaction fee.  This will be used in the constraints later when cancelling the escrow
+    pub management_kp: Pubkey,
+    // To check if user sending correct token account (in constrains)
+    pub token_mint_kp: Pubkey,
+    // The account where to do cpi transfer when buyer completes swap
+    pub seller_token_account: Pubkey,
+    // The account that would receive tokens when swap is cancelled
+    pub buyer_token_account: Pubkey,
+    // amount of token the seller wants to swap
+    pub token_amount: u64,
+    // amount of sol asked by seller to complete the escrow
+    pub lamport_amount: u64,
+    // Fee amount
+    pub tx_fee: u8,
 }
 
 #[derive(Accounts)]
 pub struct StartEscrow<'info> {
     #[account(mut)]
-    pub payer: Signer<'info>,
+    pub seller: Signer<'info>,
+
+    #[account(mut)]
+    pub management: Signer<'info>,
 
     // https://stackoverflow.com/a/70747730/18511546
-    #[account(init, payer=payer, space=8+8+8+32+32+32+32+32+32)]
+    #[account(init, payer=seller, space=8+8+8+32+32+32+32+32+32)]
     pub escrow_account: Box<Account<'info, EscrowInfo>>,
 
-    pub token1_mint: Box<Account<'info, Mint>>,
+    #[account(mut)]
+    pub token_mint_kp: Box<Account<'info, Mint>>,
 
-    pub token2_mint: Box<Account<'info, Mint>>,
+    #[account(mut, constraint=seller_token_account.mint == token_mint_kp.key())]
+    pub seller_token_account: Box<Account<'info, TokenAccount>>,
 
-    #[account(mut, constraint=user1_token1.mint == token1_mint.key())]
-    pub user1_token1: Box<Account<'info, TokenAccount>>,
+    #[account(init,payer=seller,
+        seeds=[
+            b"token_vault".as_ref(),
+            &seller.to_account_info().key.clone().to_bytes(),
+            &token_mint_kp.to_account_info().key().clone().to_bytes()
+        ],
+        bump,token::mint=token_mint_kp,token::authority=vault_owner)]
+    pub token_vault: Box<Account<'info, TokenAccount>>,
 
-    #[account(mut, constraint=user1_token2.mint == token2_mint.key())]
-    pub user1_token2: Box<Account<'info, TokenAccount>>,
-
-    #[account(init,payer=payer,
-        seeds=[b"token1_vault".as_ref(),&payer.to_account_info().key.clone().to_bytes(),&token1_mint.to_account_info().key().clone().to_bytes()],
-        bump,token::mint=token1_mint,token::authority=vault_owner)]
-    pub token1_vault: Box<Account<'info, TokenAccount>>,
-
-    // Why no token2 vault?
-    // well, because we don't need one,
-    // look, if we store token1 in the vault and when the "other user/user2" does exchange directly transfer tokens to user1 using CPI
-    // and transfer vault tokens to "other user/user2"
     /// CHECK: none
     #[account(seeds=[b"vault_owner".as_ref()],bump)]
     pub vault_owner: AccountInfo<'info>,
@@ -59,6 +60,19 @@ pub struct StartEscrow<'info> {
     pub rent: Sysvar<'info, Rent>,
 }
 
+impl<'info> StartEscrow<'info> {
+    pub fn transfer_seller_to_vault(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+        CpiContext::new(
+            self.token_program.to_account_info(),
+            Transfer {
+                from: self.seller_token_account.to_account_info().clone(),
+                to: self.token_vault.to_account_info().clone(),
+                authority: self.seller.to_account_info().clone(),
+            },
+        )
+    }
+}
+
 #[derive(Accounts)]
 pub struct CancelEscrow<'info> {
     #[account(mut)]
@@ -68,10 +82,10 @@ pub struct CancelEscrow<'info> {
     pub escrow_account: Box<Account<'info, EscrowInfo>>,
 
     #[account(mut)]
-    pub user1_token1: Box<Account<'info, TokenAccount>>,
+    pub buyer_token_account: Box<Account<'info, TokenAccount>>,
 
     #[account(mut)]
-    pub token1_vault: Box<Account<'info, TokenAccount>>,
+    pub token_vault: Box<Account<'info, TokenAccount>>,
 
     /// CHECK: none
     #[account(mut)]
@@ -82,53 +96,6 @@ pub struct CancelEscrow<'info> {
     pub token_program: Program<'info, Token>,
 
     pub rent: Sysvar<'info, Rent>,
-}
-
-#[derive(Accounts)]
-pub struct Exchange<'info> {
-    #[account(mut)]
-    pub payer: Signer<'info>,
-    // https://stackoverflow.com/a/70747730/18511546
-    #[account(mut, constraint=escrow_account.token2_amount <= user2_token2.amount)]
-    pub escrow_account: Box<Account<'info, EscrowInfo>>,
-
-    #[account(mut)]
-    pub user1_token1: Box<Account<'info, TokenAccount>>,
-
-    #[account(mut)]
-    pub user1_token2: Box<Account<'info, TokenAccount>>,
-
-    #[account(mut,constraint=user2_token1.mint == escrow_account.token1_mint.key())]
-    pub user2_token1: Box<Account<'info, TokenAccount>>,
-
-    #[account(mut,constraint=user2_token2.mint == escrow_account.token2_mint.key())]
-    pub user2_token2: Box<Account<'info, TokenAccount>>,
-
-    #[account(mut)]
-    pub token1_vault: Box<Account<'info, TokenAccount>>,
-
-    /// CHECK: none
-    #[account(mut)]
-    pub vault_owner: AccountInfo<'info>,
-
-    pub system_program: Program<'info, System>,
-
-    pub token_program: Program<'info, Token>,
-
-    pub rent: Sysvar<'info, Rent>,
-}
-
-impl<'info> StartEscrow<'info> {
-    pub fn transfer_user1_to_vault(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
-        CpiContext::new(
-            self.token_program.to_account_info(),
-            Transfer {
-                from: self.user1_token1.to_account_info().clone(),
-                to: self.token1_vault.to_account_info().clone(),
-                authority: self.payer.to_account_info().clone(),
-            },
-        )
-    }
 }
 
 impl<'info> CancelEscrow<'info> {
@@ -136,8 +103,8 @@ impl<'info> CancelEscrow<'info> {
         CpiContext::new(
             self.token_program.to_account_info(),
             Transfer {
-                from: self.token1_vault.to_account_info().clone(),
-                to: self.user1_token1.to_account_info().clone(),
+                from: self.token_vault.to_account_info().clone(),
+                to: self.buyer_token_account.to_account_info().clone(),
                 authority: self.vault_owner.to_account_info(),
             },
         )
@@ -147,12 +114,44 @@ impl<'info> CancelEscrow<'info> {
         CpiContext::new(
             self.token_program.to_account_info(),
             CloseAccount {
-                account: self.token1_vault.to_account_info().clone(),
+                account: self.token_vault.to_account_info().clone(),
                 destination: self.payer.to_account_info().clone(),
                 authority: self.vault_owner.to_account_info().clone(),
             },
         )
     }
+}
+
+#[derive(Accounts)]
+pub struct Exchange<'info> {
+    #[account(mut)]
+    pub seller: Signer<'info>,
+
+    #[account(mut)]
+    pub buyer: Signer<'info>,
+
+    #[account(mut)]
+    pub management: Signer<'info>,
+
+    // https://stackoverflow.com/a/70747730/18511546
+    #[account(mut, constraint=escrow_account.lamport_amount <= buyer.to_account_info().lamports())]
+    pub escrow_account: Box<Account<'info, EscrowInfo>>,
+
+    #[account(mut,constraint=buyer_token_account.mint == escrow_account.token_mint_kp.key())]
+    pub buyer_token_account: Box<Account<'info, TokenAccount>>,
+
+    #[account(mut)]
+    pub token_vault: Box<Account<'info, TokenAccount>>,
+
+    /// CHECK: none
+    #[account(mut)]
+    pub vault_owner: AccountInfo<'info>,
+
+    pub system_program: Program<'info, System>,
+
+    pub token_program: Program<'info, Token>,
+
+    pub rent: Sysvar<'info, Rent>,
 }
 
 impl<'info> Exchange<'info> {
@@ -172,12 +171,33 @@ impl<'info> Exchange<'info> {
         )
     }
 
+    pub fn transfer_lamports(
+        &self,
+        from: AccountInfo<'info>,
+        to: AccountInfo<'info>,
+        amount: u64,
+        system_program: Program<'info, System>,
+    ) -> Result<()> {
+        // Invoke the transfer instruction
+        invoke_signed(
+            &system_instruction::transfer(from.key, to.key, amount),
+            &[
+                from.to_account_info(),
+                to.clone(),
+                system_program.to_account_info(),
+            ],
+            &[],
+        )?;
+
+        Ok(())
+    }
+
     pub fn close_vault_account(&self) -> CpiContext<'_, '_, '_, 'info, CloseAccount<'info>> {
         CpiContext::new(
             self.token_program.to_account_info(),
             CloseAccount {
-                account: self.token1_vault.to_account_info().clone(),
-                destination: self.payer.to_account_info().clone(),
+                account: self.token_vault.to_account_info().clone(),
+                destination: self.seller.to_account_info().clone(),
                 authority: self.vault_owner.clone(),
             },
         )
