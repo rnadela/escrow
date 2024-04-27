@@ -5,11 +5,11 @@ use anchor_lang::solana_program::{program::invoke_signed, system_instruction};
 #[account]
 pub struct EscrowInfo {
     // Seller is the initializer, only they can cancel the escrow, this would be used in constraints later
-    pub seller_kp: Pubkey,
+    pub seller_pk: Pubkey,
     // To receive transaction fee.  This will be used in the constraints later when cancelling the escrow
-    pub management_kp: Pubkey,
+    pub management_pk: Pubkey,
     // To check if user sending correct token account (in constrains)
-    pub token_mint_kp: Pubkey,
+    pub token_mint_pk: Pubkey,
     // The account where to do cpi transfer when buyer completes swap
     pub seller_token_account: Pubkey,
     // The account that would receive tokens when swap is cancelled
@@ -35,18 +35,18 @@ pub struct StartEscrow<'info> {
     pub escrow_account: Box<Account<'info, EscrowInfo>>,
 
     #[account(mut)]
-    pub token_mint_kp: Box<Account<'info, Mint>>,
+    pub token_mint_pk: Box<Account<'info, Mint>>,
 
-    #[account(mut, constraint=seller_token_account.mint == token_mint_kp.key())]
+    #[account(mut, constraint=seller_token_account.mint == token_mint_pk.key())]
     pub seller_token_account: Box<Account<'info, TokenAccount>>,
 
     #[account(init,payer=seller,
         seeds=[
             b"token_vault".as_ref(),
             &seller.to_account_info().key.clone().to_bytes(),
-            &token_mint_kp.to_account_info().key().clone().to_bytes()
+            &token_mint_pk.to_account_info().key().clone().to_bytes()
         ],
-        bump,token::mint=token_mint_kp,token::authority=vault_owner)]
+        bump,token::mint=token_mint_pk,token::authority=vault_owner)]
     pub token_vault: Box<Account<'info, TokenAccount>>,
 
     /// CHECK: none
@@ -75,7 +75,7 @@ impl<'info> StartEscrow<'info> {
 
 #[derive(Accounts)]
 pub struct CancelEscrow<'info> {
-    #[account(mut)]
+    #[account(mut, constraint=escrow_account.seller_pk == *payer.key || escrow_account.management_pk == *payer.key)]
     pub payer: Signer<'info>,
 
     // https://stackoverflow.com/a/70747730/18511546
@@ -124,20 +124,20 @@ impl<'info> CancelEscrow<'info> {
 
 #[derive(Accounts)]
 pub struct Exchange<'info> {
-    #[account(mut)]
+    #[account(mut, constraint=escrow_account.seller_pk == *seller.key)]
     pub seller: Signer<'info>,
 
     #[account(mut)]
     pub buyer: Signer<'info>,
 
-    #[account(mut)]
+    #[account(mut, constraint=escrow_account.management_pk == *management.key)]
     pub management: Signer<'info>,
 
     // https://stackoverflow.com/a/70747730/18511546
     #[account(mut, constraint=escrow_account.lamport_amount <= buyer.to_account_info().lamports())]
     pub escrow_account: Box<Account<'info, EscrowInfo>>,
 
-    #[account(mut,constraint=buyer_token_account.mint == escrow_account.token_mint_kp.key())]
+    #[account(mut, constraint=buyer_token_account.mint == escrow_account.token_mint_pk.key())]
     pub buyer_token_account: Box<Account<'info, TokenAccount>>,
 
     #[account(mut)]

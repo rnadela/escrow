@@ -18,9 +18,9 @@ pub mod escrow {
         tx_fee: u8,
     ) -> Result<()> {
         let escrow_account = &mut ctx.accounts.escrow_account;
-        escrow_account.seller_kp = *ctx.accounts.seller.key;
-        escrow_account.management_kp = *ctx.accounts.management.key;
-        escrow_account.token_mint_kp = ctx.accounts.token_mint_kp.key();
+        escrow_account.seller_pk = *ctx.accounts.seller.key;
+        escrow_account.management_pk = *ctx.accounts.management.key;
+        escrow_account.token_mint_pk = ctx.accounts.token_mint_pk.key();
         escrow_account.seller_token_account = ctx.accounts.seller_token_account.key();
         escrow_account.token_amount = token_amount;
         escrow_account.lamport_amount = lamport_amount;
