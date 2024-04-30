@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{CloseAccount, Mint, Token, TokenAccount, Transfer};
+use anchor_spl::{associated_token::AssociatedToken, token::{CloseAccount, Mint, Token, TokenAccount, Transfer}};
 use anchor_lang::solana_program::{program::invoke_signed, system_instruction};
 
 #[account]
@@ -82,7 +82,7 @@ pub struct CancelEscrow<'info> {
     pub escrow_account: Box<Account<'info, EscrowInfo>>,
 
     #[account(mut)]
-    pub buyer_token_account: Box<Account<'info, TokenAccount>>,
+    pub seller_token_account: Box<Account<'info, TokenAccount>>,
 
     #[account(mut)]
     pub token_vault: Box<Account<'info, TokenAccount>>,
@@ -99,12 +99,12 @@ pub struct CancelEscrow<'info> {
 }
 
 impl<'info> CancelEscrow<'info> {
-    pub fn transfer_vault_to_user1(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+    pub fn transfer_vault_to_seller(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         CpiContext::new(
             self.token_program.to_account_info(),
             Transfer {
                 from: self.token_vault.to_account_info().clone(),
-                to: self.buyer_token_account.to_account_info().clone(),
+                to: self.seller_token_account.to_account_info().clone(),
                 authority: self.vault_owner.to_account_info(),
             },
         )
@@ -137,7 +137,10 @@ pub struct Exchange<'info> {
     #[account(mut, constraint=escrow_account.lamport_amount <= buyer.to_account_info().lamports())]
     pub escrow_account: Box<Account<'info, EscrowInfo>>,
 
-    #[account(mut, constraint=buyer_token_account.mint == escrow_account.token_mint_pk.key())]
+    #[account(mut)]
+    pub token_mint_pk: Box<Account<'info, Mint>>,
+
+    #[account(init_if_needed, payer=buyer, associated_token::mint=token_mint_pk, associated_token::authority=buyer)]
     pub buyer_token_account: Box<Account<'info, TokenAccount>>,
 
     #[account(mut)]
@@ -150,6 +153,8 @@ pub struct Exchange<'info> {
     pub system_program: Program<'info, System>,
 
     pub token_program: Program<'info, Token>,
+
+    pub associated_token_program: Program<'info, AssociatedToken>,
 
     pub rent: Sysvar<'info, Rent>,
 }
