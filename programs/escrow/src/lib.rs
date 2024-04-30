@@ -5,7 +5,7 @@ use account::*;
 
 mod account;
 
-declare_id!("8QJsxoHYasRrjkxosF2VXGNBTEo4kqP1NKWLkiGArdeT");
+declare_id!("3BJ7Lxq6ayB6P5JrBkNDWDL9EpWv7TYXn8qQjkyV995k");
 
 #[program]
 pub mod escrow {
@@ -38,7 +38,7 @@ pub mod escrow {
         // transfer tokens back from vault to user
         transfer(
             ctx.accounts
-                .transfer_vault_to_user1()
+                .transfer_vault_to_seller()
                 .with_signer(signer_seeds),
             escrow_account.token_amount,
         )?;
