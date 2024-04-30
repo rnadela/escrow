@@ -36,6 +36,8 @@ describe('escrow', () => {
       184, 23, 185, 227, 45, 100, 78, 54, 129, 64, 243, 189, 52, 128, 8,
     ]),
   );
+  // Token Account
+  // H5o13aehvCPdbDTURFcC1y5PXaPwvtaURbRwLNH9jMAY
 
   // BobbPz2zxsSPYV2u9FswCRxNXKk27StJ5gudKTeK9LkW
   const buyer = anchor.web3.Keypair.fromSecretKey(
@@ -47,21 +49,27 @@ describe('escrow', () => {
       135,
     ]),
   );
+  // Token Account
+  // 4VHEo5gkgLZeo2soRnkWGiHnRhLhCzcN3AUJjEpJqos5
 
-  // 38MWzLvaxmmyePpSHpD2TzxfEyYQNcfsJHjLF9yda1JT
-  const escrow_account = anchor.web3.Keypair.fromSecretKey(
+  const ESCROW_ACCOUNT_KP = [
+    // 38MWzLvaxmmyePpSHpD2TzxfEyYQNcfsJHjLF9yda1JT
     Uint8Array.from([
       37, 171, 117, 64, 240, 87, 193, 71, 196, 107, 14, 217, 246, 48, 23, 147,
       134, 188, 153, 39, 100, 207, 250, 3, 5, 200, 102, 249, 106, 225, 71, 8,
       31, 153, 163, 98, 4, 44, 178, 175, 117, 179, 105, 235, 168, 95, 237, 86,
       195, 25, 90, 88, 163, 35, 225, 94, 234, 221, 44, 91, 75, 61, 216, 92,
     ]),
-    // Uint8Array.from([
-    //   96, 31, 211, 116, 9, 23, 206, 64, 230, 25, 59, 5, 36, 219, 105, 177, 23,
-    //   204, 94, 202, 191, 139, 215, 75, 177, 107, 215, 126, 107, 134, 110, 158,
-    //   184, 189, 55, 248, 196, 179, 212, 119, 64, 201, 183, 1, 158, 210, 42, 106,
-    //   20, 206, 45, 240, 58, 173, 166, 51, 209, 105, 212, 91, 149, 179, 148, 201,
-    // ]),
+    // 38MWzLvaxmmyePpSHpD2TzxfEyYQNcfsJHjLF9yda1JT
+    Uint8Array.from([
+      96, 31, 211, 116, 9, 23, 206, 64, 230, 25, 59, 5, 36, 219, 105, 177, 23,
+      204, 94, 202, 191, 139, 215, 75, 177, 107, 215, 126, 107, 134, 110, 158,
+      184, 189, 55, 248, 196, 179, 212, 119, 64, 201, 183, 1, 158, 210, 42, 106,
+      20, 206, 45, 240, 58, 173, 166, 51, 209, 105, 212, 91, 149, 179, 148, 201,
+    ]),
+  ];
+  const escrow_account = anchor.web3.Keypair.fromSecretKey(
+    ESCROW_ACCOUNT_KP[0],
   );
 
   // T19zWQLv1pRRfd5rvHdSL1svxg6pHtZSX7PEn6CHkZ7
@@ -78,10 +86,32 @@ describe('escrow', () => {
   //   console.log('keypair =', anchor.web3.Keypair.generate().secretKey);
   // });
 
+  afterEach(async () => {
+    console.log('Sleeping for 5 seconds');
+    return new Promise<void>((resolve) =>
+      setTimeout(() => {
+        console.log('Awake!');
+        resolve();
+      }, 5000),
+    );
+  });
+
   // it('request airdrops', async () => {
+  //   console.log(
+  //     'escrow_account.publicKey =',
+  //     escrow_account.publicKey.toBase58(),
+  //   );
   //   await connection.requestAirdrop(management.publicKey, 2 * LAMPORTS_PER_SOL);
   //   await connection.requestAirdrop(seller.publicKey, 1 * LAMPORTS_PER_SOL);
   //   await connection.requestAirdrop(buyer.publicKey, 1000 * LAMPORTS_PER_SOL);
+
+  //   console.log('Sleeping for 20 seconds');
+  //   return new Promise<void>((resolve) =>
+  //     setTimeout(() => {
+  //       console.log('Awake!');
+  //       resolve();
+  //     }, 20000),
+  //   );
   // });
 
   // it('create token mint', async () => {
@@ -96,41 +126,41 @@ describe('escrow', () => {
   //   console.log(`Mint - ${mint_pk}`);
   // });
 
-  // it('check if seller has token account existing', async () => {
-  //   const seller_token_acccount_pk = await getAssociatedTokenAddress(
-  //     token_mint_kp.publicKey,
-  //     seller.publicKey,
-  //   );
-  //   console.log(
-  //     'seller_token_acccount_kp =',
-  //     seller_token_acccount_pk.toBase58(),
-  //   );
+  // // it('check if seller has token account existing', async () => {
+  // //   const seller_token_acccount_pk = await getAssociatedTokenAddress(
+  // //     token_mint_kp.publicKey,
+  // //     seller.publicKey,
+  // //   );
+  // //   console.log(
+  // //     'seller_token_acccount_kp =',
+  // //     seller_token_acccount_pk.toBase58(),
+  // //   );
 
-  //   try {
-  //     const account = await getAccount(connection, seller_token_acccount_pk);
-  //     console.log('seller_account =', account);
-  //   } catch (error) {
-  //     console.log('error =', error);
-  //   }
-  // });
+  // //   try {
+  // //     const account = await getAccount(connection, seller_token_acccount_pk);
+  // //     console.log('seller_account =', account);
+  // //   } catch (error) {
+  // //     console.log('error =', error);
+  // //   }
+  // // });
 
-  // it('check if buyer has token account existing', async () => {
-  //   const buyer_token_acccount_pk = await getAssociatedTokenAddress(
-  //     token_mint_kp.publicKey,
-  //     buyer.publicKey,
-  //   );
-  //   console.log(
-  //     'buyer_token_acccount_kp =',
-  //     buyer_token_acccount_pk.toBase58(),
-  //   );
+  // // it('check if buyer has token account existing', async () => {
+  // //   const buyer_token_acccount_pk = await getAssociatedTokenAddress(
+  // //     token_mint_kp.publicKey,
+  // //     buyer.publicKey,
+  // //   );
+  // //   console.log(
+  // //     'buyer_token_acccount_kp =',
+  // //     buyer_token_acccount_pk.toBase58(),
+  // //   );
 
-  //   try {
-  //     const account = await getAccount(connection, buyer_token_acccount_pk);
-  //     console.log('buyer_account =', account);
-  //   } catch (error) {
-  //     console.log('error =', error);
-  //   }
-  // });
+  // //   try {
+  // //     const account = await getAccount(connection, buyer_token_acccount_pk);
+  // //     console.log('buyer_account =', account);
+  // //   } catch (error) {
+  // //     console.log('error =', error);
+  // //   }
+  // // });
 
   // it('create token account for seller', async () => {
   //   const seller_token_account_kp = await createAccount(
@@ -152,16 +182,20 @@ describe('escrow', () => {
   //     buyer.publicKey,
   //   );
   //   console.log(
-  //     `Newly created ata for user1 - ${buyer_token_account_kp} for mint - ${token_mint_kp.publicKey}`,
+  //     `Newly created ata for buyer - ${buyer_token_account_kp} for mint - ${token_mint_kp.publicKey}`,
   //   );
   // });
 
-  // it('mint tokens', async () => {
+  // it('mint tokens for seller', async () => {
   //   const token_amount = 10_000;
 
   //   const seller_token_acccount_pk = await getAssociatedTokenAddress(
   //     token_mint_kp.publicKey,
   //     seller.publicKey,
+  //   );
+  //   console.log(
+  //     'seller_token_acccount_pk =',
+  //     seller_token_acccount_pk.toBase58(),
   //   );
   //   const tx1 = await mintTo(
   //     connection,
@@ -177,8 +211,8 @@ describe('escrow', () => {
   // });
 
   // it('create new escrow', async () => {
-  //   const token_amount_to_sell = 700;
-  //   const lamport_amount = 20 * LAMPORTS_PER_SOL; // 20 SOL
+  //   const token_amount_to_sell = 5000;
+  //   const lamport_amount = 100 * LAMPORTS_PER_SOL; // 20 SOL
 
   //   try {
   //     const seller_token_account = await getAssociatedTokenAddress(
@@ -195,7 +229,7 @@ describe('escrow', () => {
   //         seller: seller.publicKey,
   //         management: management.publicKey,
   //         escrowAccount: escrow_account.publicKey,
-  //         tokenMintKp: token_mint_kp.publicKey,
+  //         tokenMintPk: token_mint_kp.publicKey,
   //         sellerTokenAccount: seller_token_account,
   //         tokenVault: PublicKey.findProgramAddressSync(
   //           [
@@ -218,13 +252,81 @@ describe('escrow', () => {
   //   }
   // });
 
-  // it('cancel escrow', async () => {
+  // it('cancel escrow by buyer', async () => {
   //   try {
   //     const [vault_owner, bump] = PublicKey.findProgramAddressSync(
   //       [Uint8Array.from(get_seeds('vault_owner'))],
   //       program.programId,
   //     );
-  //     const user1_token1 = await getAssociatedTokenAddress(
+  //     const seller_token_account = await getAssociatedTokenAddress(
+  //       token_mint_kp.publicKey,
+  //       seller.publicKey,
+  //     );
+  //     const tx = await program.methods
+  //       .cancelEscrow(bump)
+  //       .accounts({
+  //         payer: buyer.publicKey,
+  //         escrowAccount: escrow_account.publicKey,
+  //         sellerTokenAccount: seller_token_account,
+  //         tokenVault: PublicKey.findProgramAddressSync(
+  //           [
+  //             Uint8Array.from(get_seeds('token_vault')),
+  //             seller.publicKey.toBytes(),
+  //             token_mint_kp.publicKey.toBytes(),
+  //           ],
+  //           program.programId,
+  //         )[0],
+  //         vaultOwner: vault_owner,
+  //       })
+  //       .signers([buyer])
+  //       .rpc();
+  //     console.log('Your transaction signature', tx);
+  //   } catch (e) {
+  //     console.log(e);
+  //   }
+  // });
+
+  // it('cancel escrow by management', async () => {
+  //   try {
+  //     const [vault_owner, bump] = PublicKey.findProgramAddressSync(
+  //       [Uint8Array.from(get_seeds('vault_owner'))],
+  //       program.programId,
+  //     );
+  //     const seller_token_account = await getAssociatedTokenAddress(
+  //       token_mint_kp.publicKey,
+  //       seller.publicKey,
+  //     );
+  //     const tx = await program.methods
+  //       .cancelEscrow(bump)
+  //       .accounts({
+  //         payer: management.publicKey,
+  //         escrowAccount: escrow_account.publicKey,
+  //         sellerTokenAccount: seller_token_account,
+  //         tokenVault: PublicKey.findProgramAddressSync(
+  //           [
+  //             Uint8Array.from(get_seeds('token_vault')),
+  //             seller.publicKey.toBytes(),
+  //             token_mint_kp.publicKey.toBytes(),
+  //           ],
+  //           program.programId,
+  //         )[0],
+  //         vaultOwner: vault_owner,
+  //       })
+  //       .signers([management])
+  //       .rpc();
+  //     console.log('Your transaction signature', tx);
+  //   } catch (e) {
+  //     console.log(e);
+  //   }
+  // });
+
+  // it('cancel escrow by seller', async () => {
+  //   try {
+  //     const [vault_owner, bump] = PublicKey.findProgramAddressSync(
+  //       [Uint8Array.from(get_seeds('vault_owner'))],
+  //       program.programId,
+  //     );
+  //     const seller_token_account = await getAssociatedTokenAddress(
   //       token_mint_kp.publicKey,
   //       seller.publicKey,
   //     );
@@ -233,10 +335,10 @@ describe('escrow', () => {
   //       .accounts({
   //         payer: seller.publicKey,
   //         escrowAccount: escrow_account.publicKey,
-  //         user1Token1: user1_token1,
-  //         token1Vault: PublicKey.find                                                                                                                        ProgramAddressSync(
+  //         sellerTokenAccount: seller_token_account,
+  //         tokenVault: PublicKey.findProgramAddressSync(
   //           [
-  //             Uint8Array.from(get_seeds('token1_vault')),
+  //             Uint8Array.from(get_seeds('token_vault')),
   //             seller.publicKey.toBytes(),
   //             token_mint_kp.publicKey.toBytes(),
   //           ],
@@ -269,6 +371,7 @@ describe('escrow', () => {
   //         buyer: buyer.publicKey,
   //         management: management.publicKey,
   //         escrowAccount: escrow_account.publicKey,
+  //         tokenMintPk: token_mint_kp.publicKey,
   //         buyerTokenAccount: buyer_token_account,
   //         tokenVault: PublicKey.findProgramAddressSync(
   //           [
