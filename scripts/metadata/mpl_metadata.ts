@@ -63,7 +63,7 @@ async function main() {
     // TODO change those values!
     name: '8chain Token',
     symbol: '8CHAIN',
-    uri: 'https://raw.githubusercontent.com/loopcreativeandy/video-tutorial-resources/main/metadataUpdate/metadata.json',
+    uri: 'https://github.com/rnadela/escrow/blob/9ebda3df3b329bb6af2a1a900e12741021e5b88f/scripts/metadata/metadata.json',
   };
   const onChainData = {
     ...ourMetadata,
