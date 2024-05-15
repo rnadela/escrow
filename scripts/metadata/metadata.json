@@ -2,5 +2,5 @@
   "name": "8CHAIN",
   "symbol": "8CHAIN",
   "description": "Just a test for how to name your token, again and again ;)",
-  "image": "https://github.com/rnadela/escrow/blob/9ebda3df3b329bb6af2a1a900e12741021e5b88f/scripts/metadata/8chain.jpeg"
+  "image": "https://raw.githubusercontent.com/rnadela/escrow/feature/token-for-lamports/scripts/metadata/8chain.jpeg"
 }
